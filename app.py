@@ -668,6 +668,57 @@ def homeGerente():
         return redirect (url_for("indexGerente"))
     return render_template("tela-home-ga.html")
 
+@app.route("/gerenteGeral", methods=["GET", "POST"])
+def indexGerenteGeral():
+    """ if session["gerenteLogado"] == False:
+        return redirect (url_for("indexGerenteGeral")) """
+    error = None
+
+    if request.method == "POST":
+        userDetails = request.form
+        numMatriculaGerenteGeral = userDetails["numMatricula"]
+        senhaGerenteGeral = userDetails["senhaLogin"]
+
+        if not numMatriculaGerenteGeral or not senhaGerenteGeral:
+
+            flash("Preencha todos os campos!")
+            return redirect (url_for('indexGerenteGeral'))
+
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute("SELECT num_senha, gerente_id, gerente_nome, num_matricula FROM gerenteGeral WHERE num_matricula = %s", [numMatriculaGerenteGeral])
+            retornoContaGerenteGeral = cur.fetchone()
+            senhaGravada = retornoContaGerenteGeral[0]
+            session['idGerente'] = retornoContaGerenteGeral[1]
+            session['nomeGerente'] = retornoContaGerenteGeral[2]
+            session['matriculaGerente'] = retornoContaGerenteGeral[3]
+            
+            session['funcaoAdministrativa'] = "Gerente Geral"
+
+        except Exception as ex:
+
+             flash("Conta de Gerente de Agência não existe no sistema! Solicite a um Gerente Geral o cadastro para continuar.")
+             return render_template("tela-login-ga.html")
+
+        if senhaGerenteGeral == senhaGravada:
+            session.pop('gerenteGeralLogado', None)
+            session["gerenteGeralLogado"] = True
+            return redirect (url_for('homeGerenteGeral'))
+        else:
+            flash("Senha incorreta!")
+            return render_template("tela-login-ga.html")
+
+    return render_template("tela-login-ga.html", error = error)
+
+@app.route("/homeGerenteGeral", methods=["GET", "POST"])
+def homeGerenteGeral():
+    if session["gerenteGeralLogado"] == False:
+        return redirect (url_for("indexGerenteGeral"))
+    return render_template("tela-home-ga.html")
+
+
+
+
 @app.route("/clientes", methods=["GET", "POST"])
 def clientes():
     if session["gerenteLogado"] == False:
